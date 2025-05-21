@@ -1,0 +1,177 @@
+# Quiz questions for knee examination
+# Each question has an id, text, type (single_choice), and available options
+
+questions:
+  - id: arrival_method
+    text: "Як пацієнт прибув до нас у амбулаторію?"
+    type: single_choice
+    options:
+      - "Самостійно"
+      - "Швидка допомога"
+      - "З милицями"
+      - "У візку"
+    
+  - id: can_walk
+    text: "Чи може пацієнт ходити?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: gait_deviation
+    text: "Чи є помітні відхилення у ході?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: leg_axis_deviation
+    text: "Чи є помітні відхилення в осі ноги?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: unilateral_trauma
+    text: "Чи травма одностороння?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: rest_position
+    text: "Чи є позиція спокою?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: intra_articular_effusion
+    text: "Чи є внутрішньосуглобовий випіт?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: knee_swelling
+    text: "Чи є набряк у зоні колінного суглоба?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: skin_damage
+    text: "Чи є ушкодження шкіри?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: open_joint
+    text: "Чи відкритий суглоб?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: patella_position
+    text: "Чи є колінна чашечка (патела) в ортотопічному положенні?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: patella_palpation
+    text: "Чи є пальпаторні відхилення колінної чашечки?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: femur_muscle_deviation
+    text: "Чи є відхилення у м'язах дистально до стегнової кістки?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: tibia_muscle_deviation
+    text: "Чи є відхилення у м'язах проксимально до великогомілкової кістки?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: meniscus_symptoms
+    text: "Чи є симптоми меніска?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: steinmann_signs
+    text: "Ознаки Штеймана I/II?"
+    type: single_choice
+    options:
+      - "I позитивний, II негативний"
+      - "I негативний, II позитивний"
+      - "Обидва позитивні"
+      - "Обидва негативні"
+    
+  - id: proximal_tibia_pain
+    text: "Чи є болючість при натисканні в області проксимальної частини великогомілкової кістки?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: distal_femur_pain
+    text: "Чи є болючість при натисканні в області дистальної епіфізи стегнової кістки?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: popliteal_pain
+    text: "Чи є болючість у підколінній зоні?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: lachman_test
+    text: "Чи є патологія за тестом Лахмана? (тест шухляди)"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: biomechanical_deviation
+    text: "Чи є біомеханічні відхилення?"
+    type: single_choice
+    options:
+      - "Так"
+      - "Ні"
+    
+  - id: extension_amplitude
+    text: "Яка активна/пасивна амплітуда розгинання?"
+    type: text_input
+    placeholder: "Активн.°/Пасивн.°"
+    
+  - id: flexion_amplitude
+    text: "Яка активна/пасивна амплітуда згинання?"
+    type: text_input
+    placeholder: "Активн.°/Пасивн.°"
+    
+  - id: rotation_amplitude
+    text: "Яка амплітуда зовнішньої/внутрішньої ротації?"
+    type: text_input
+    placeholder: "Активн.°/Пасивн.°"
+    
+  - id: additional_info
+    text: "Чи хочете щось додатково зафіксувати?"
+    type: optional_text
+    options:
+      - "Так"
+      - "Ні"
+    follow_up_text: "Введіть додаткову інформацію:" 

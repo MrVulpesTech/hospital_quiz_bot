@@ -1,0 +1,18 @@
+# Main dependencies
+aiogram>=3.0.0,<4.0.0            # Telegram Bot API framework
+SQLAlchemy>=2.0.0                # SQL toolkit and ORM
+aiosqlite>=0.17.0                # Async SQLite library
+openai>=1.0.0                    # OpenAI API client
+pydantic>=2.0.0                  # Data validation and settings management
+python-dotenv>=1.0.0             # Environment variables management
+PyYAML>=6.0                      # YAML parser for quiz questions
+jinja2>=3.0.0                    # Template engine for formatting reports
+
+# Development dependencies
+pytest>=7.0.0                    # Testing framework
+pytest-asyncio>=0.21.0           # Pytest support for asyncio
+pytest-cov>=4.1.0                # Coverage reporting
+black>=23.0.0                    # Code formatter
+isort>=5.12.0                    # Import sorter
+flake8>=6.0.0                    # Linter
+mypy>=1.0.0                      # Type checking 
