@@ -3,6 +3,7 @@ Quiz service for the Hospital Quiz Bot.
 This module provides functionality for loading and managing quiz questions.
 """
 
+import os
 import uuid
 from typing import Dict, List, Optional, Any, Union
 
@@ -18,40 +19,56 @@ class QuizService:
     # Singleton instance
     _instance = None
     _initialized = False
+    _language_quiz_files = {
+        "uk": settings.quiz_file,  # Default Ukrainian file
+        "de": str(settings.quiz_file).replace("quizes.yaml", "quizes_de.yaml")  # German file
+    }
+    _loaded_questions = {}
     
-    def __new__(cls, quiz_file=None):
+    def __new__(cls, language=None):
         """Create a new QuizService instance or return the existing one."""
         if cls._instance is None:
             cls._instance = super(QuizService, cls).__new__(cls)
         return cls._instance
     
-    def __init__(self, quiz_file=None):
+    def __init__(self, language=None):
         """Initialize the quiz service with the quiz file path."""
         # Only initialize once
         if not QuizService._initialized:
-            self.quiz_file = quiz_file or settings.quiz_file
-            self.questions = []
-            self.questions_by_id = {}
-            self._load_questions()
+            self._load_all_languages()
             QuizService._initialized = True
+        
+        # Set the active language
+        self.language = language or "uk"  # Default to Ukrainian
+        self.questions = self._loaded_questions.get(self.language, [])
+        self.questions_by_id = {q["id"]: q for q in self.questions}
     
-    def _load_questions(self) -> None:
-        """Load questions from the quiz file."""
-        try:
-            with open(self.quiz_file, "r", encoding="utf-8") as file:
-                data = yaml.safe_load(file)
-                
-            if not data or "questions" not in data:
-                logger.error(f"Invalid quiz file format: {self.quiz_file}")
-                return
-                
-            self.questions = data["questions"]
+    def _load_all_languages(self) -> None:
+        """Load questions for all supported languages."""
+        for lang, file_path in self._language_quiz_files.items():
+            try:
+                with open(file_path, "r", encoding="utf-8") as file:
+                    data = yaml.safe_load(file)
+                    
+                if not data or "questions" not in data:
+                    logger.error(f"Invalid quiz file format: {file_path}")
+                    continue
+                    
+                self._loaded_questions[lang] = data["questions"]
+                logger.info(f"Loaded {len(data['questions'])} questions for language {lang} from {file_path}")
+            except Exception as e:
+                logger.error(f"Error loading quiz file for language {lang}: {str(e)}")
+                self._loaded_questions[lang] = []
+    
+    def set_language(self, language: str) -> None:
+        """Set the active language for the quiz service."""
+        if language in self._language_quiz_files:
+            self.language = language
+            self.questions = self._loaded_questions.get(language, [])
             self.questions_by_id = {q["id"]: q for q in self.questions}
-            logger.info(f"Loaded {len(self.questions)} questions from {self.quiz_file}")
-        except Exception as e:
-            logger.error(f"Error loading quiz file: {str(e)}")
-            self.questions = []
-            self.questions_by_id = {}
+            logger.info(f"Set active language to: {language}")
+        else:
+            logger.error(f"Language not supported: {language}")
     
     def get_all_questions(self) -> List[Dict[str, Any]]:
         """Get all questions."""

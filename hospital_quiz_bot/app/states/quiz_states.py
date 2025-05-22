@@ -6,6 +6,13 @@ This module defines the FSM states for the quiz conversation flow.
 from aiogram.fsm.state import StatesGroup, State
 
 
+class UserStates(StatesGroup):
+    """FSM states for user-specific operations."""
+    
+    # Language selection
+    selecting_language = State()
+
+
 class QuizStates(StatesGroup):
     """FSM states for the quiz conversation flow."""
     

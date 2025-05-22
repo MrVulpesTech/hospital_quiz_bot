@@ -29,6 +29,7 @@ class OpenAIService:
         # Load prompts
         self.system_message = self._load_system_message()
         self.main_prompt_template = self._load_main_prompt_template()
+        self.german_prompt_template = self._load_german_prompt_template()
         self.alternative_prompt_template = self._load_alternative_prompt_template()
     
     def _load_prompt_section(self, section_marker: str) -> str:
@@ -73,6 +74,15 @@ class OpenAIService:
     def _load_main_prompt_template(self) -> str:
         """Load the main prompt template from the prompts file."""
         return self._load_prompt_section("## Main Report Generation Prompt")
+        
+    def _load_german_prompt_template(self) -> str:
+        """Load the German prompt template from the prompts file."""
+        german_prompt = self._load_prompt_section("## German Report Generation Prompt")
+        # Use main prompt as fallback if German prompt is not found
+        if not german_prompt and self.main_prompt_template:
+            logger.warning("German prompt not found, using main prompt as fallback")
+            return self.main_prompt_template
+        return german_prompt
     
     def _load_alternative_prompt_template(self) -> str:
         """Load the alternative prompt template from the prompts file."""
@@ -82,16 +92,24 @@ class OpenAIService:
             return self.main_prompt_template
         return alt_prompt
     
-    def generate_report(self, patient_data: str, use_alternative=False) -> Optional[str]:
+    def generate_report(self, patient_data: str, language: str = "uk") -> Optional[str]:
         """Generate a report using the OpenAI API."""
         try:
-            # Select the appropriate prompt template
-            prompt_template = self.alternative_prompt_template if use_alternative else self.main_prompt_template
+            # Select the appropriate prompt template based on language
+            if language == "de":
+                prompt_template = self.german_prompt_template
+                logger.info("Using German prompt template for report generation")
+            else:  # Default to Ukrainian
+                prompt_template = self.main_prompt_template
+                logger.info("Using Ukrainian prompt template for report generation")
             
             # If no prompt template is available, provide an error
             if not prompt_template:
                 logger.error("No valid prompt template available")
-                return "Помилка: Не вдалося згенерувати звіт. Налаштування шаблону відсутнє."
+                if language == "de":
+                    return "Fehler: Bericht konnte nicht generiert werden. Keine Vorlage verfügbar."
+                else:
+                    return "Помилка: Не вдалося згенерувати звіт. Налаштування шаблону відсутнє."
             
             # Replace the placeholder with the patient data
             prompt = prompt_template.replace("[PATIENT_DATA_PLACEHOLDER]", patient_data)
@@ -102,7 +120,10 @@ class OpenAIService:
             return response
         except Exception as e:
             logger.error(f"Error generating report: {str(e)}")
-            return f"Помилка: Не вдалося згенерувати звіт. {str(e)}"
+            if language == "de":
+                return f"Fehler: Bericht konnte nicht generiert werden. {str(e)}"
+            else:
+                return f"Помилка: Не вдалося згенерувати звіт. {str(e)}"
     
     def _generate_completion(self, prompt: str) -> str:
         """Generate a completion using the OpenAI API synchronously."""

@@ -17,12 +17,14 @@ from hospital_quiz_bot.config.logging_config import logger
 class ReportService:
     """Service for generating reports from quiz responses."""
     
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession, language: str = "uk"):
         """Initialize the report service."""
         self.session = session
         self.quiz_response_repo = QuizResponseRepository(session)
         self.openai_service = OpenAIService()
-        self.quiz_service = QuizService()
+        self.quiz_service = QuizService(language)
+        self.quiz_service.set_language(language)
+        self.language = language
     
     async def generate_report_from_session(self, session_id: str) -> Optional[str]:
         """Generate a report from a quiz session."""
@@ -30,6 +32,10 @@ class ReportService:
         if not quiz_response:
             logger.error(f"Quiz session not found: {session_id}")
             return None
+        
+        # Set language from quiz response
+        language = quiz_response.language or "uk"
+        self.quiz_service.set_language(language)
             
         return await self.generate_report(quiz_response)
     
@@ -43,9 +49,12 @@ class ReportService:
             # Format the responses for the prompt
             formatted_responses = self._format_responses_for_prompt(quiz_response)
             
+            # Get the language from the quiz response
+            language = quiz_response.language or "uk"
+            
             # Generate the report - use synchronous method
             # Important: Don't use the async/await pattern here since we've made the OpenAI call synchronous
-            report = self.openai_service.generate_report(formatted_responses)
+            report = self.openai_service.generate_report(formatted_responses, language=language)
             
             if report:
                 # Save the report
@@ -53,7 +62,7 @@ class ReportService:
                 await self.quiz_response_repo.update(quiz_response)
                 await self.quiz_response_repo.commit()
                 
-                logger.info(f"Generated report for quiz: {quiz_response.id}")
+                logger.info(f"Generated report for quiz: {quiz_response.id} in language: {language}")
                 
             return report
         except Exception as e:
@@ -64,6 +73,15 @@ class ReportService:
         """Format the responses for the OpenAI prompt."""
         formatted_lines = []
         responses = quiz_response.get_all_responses()
+        language = quiz_response.language or "uk"
+        
+        # Set the quiz service language
+        self.quiz_service.set_language(language)
+        
+        # Get placeholder text based on language
+        not_specified = "Не вказано"
+        if language == "de":
+            not_specified = "Nicht angegeben"
         
         # Map question IDs to their actual text
         for question_id, answer in responses.items():
@@ -75,7 +93,7 @@ class ReportService:
                 if question["type"] == "text_input" and question.get("placeholder"):
                     # For questions with expected format
                     if not answer:
-                        answer = "Не вказано"
+                        answer = not_specified
                         
                 formatted_lines.append(f"{question_text}: {answer}")
         

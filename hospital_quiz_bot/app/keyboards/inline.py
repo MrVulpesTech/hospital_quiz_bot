@@ -41,6 +41,7 @@ def get_pagination_keyboard(
 
 def get_reports_keyboard(
     reports: List[Dict[str, Any]],
+    language: str = "uk",
     page: int = 1,
     items_per_page: int = 5
 ) -> InlineKeyboardMarkup:
@@ -54,8 +55,15 @@ def get_reports_keyboard(
     buttons = []
     for report in page_reports:
         created_at = report["created_at"].strftime("%d.%m.%Y %H:%M")
+        
+        # Format the button text based on language
+        if language == "de":
+            text = f"Bericht vom {created_at}"
+        else:  # Default to Ukrainian
+            text = f"Звіт від {created_at}"
+            
         buttons.append([InlineKeyboardButton(
-            text=f"Звіт від {created_at}",
+            text=text,
             callback_data=f"report:{report['session_id']}"
         )])
     
@@ -86,9 +94,13 @@ def get_reports_keyboard(
         
         buttons.append(pagination)
     
-    # Add a back button
+    # Add a back button with language-specific text
+    back_text = "🔙 Назад"
+    if language == "de":
+        back_text = "🔙 Zurück"
+        
     buttons.append([InlineKeyboardButton(
-        text="🔙 Назад",
+        text=back_text,
         callback_data="back"
     )])
     
@@ -96,27 +108,38 @@ def get_reports_keyboard(
 
 
 def get_report_actions_keyboard(
-    session_id: str
+    language: str = "uk"
 ) -> InlineKeyboardMarkup:
     """Get a keyboard for report actions."""
-    buttons = [
-        [
-            # Comment out the share button
-            # InlineKeyboardButton(
-            #     text="📤 Поділитися",
-            #     callback_data=f"share:{session_id}"
-            # ),
-            InlineKeyboardButton(
-                text="🔄 Новий звіт",
-                callback_data="new_quiz"
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text="🔙 Назад до списку",
-                callback_data="reports"
-            )
+    if language == "de":
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    text="🔄 Neuer Bericht",
+                    callback_data="new_quiz"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Zurück zur Liste",
+                    callback_data="reports"
+                )
+            ]
         ]
-    ]
+    else:  # Default to Ukrainian
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    text="🔄 Новий звіт",
+                    callback_data="new_quiz"
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="🔙 Назад до списку",
+                    callback_data="reports"
+                )
+            ]
+        ]
     
     return InlineKeyboardMarkup(inline_keyboard=buttons) 

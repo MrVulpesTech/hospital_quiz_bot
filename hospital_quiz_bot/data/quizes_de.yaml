@@ -1,0 +1,177 @@
+# Quiz questions for knee examination (German version)
+# Each question has an id, text, type (single_choice), and available options
+
+questions:
+  - id: arrival_method
+    text: "Wie Patient zu uns in die Ambulanz gekommen?"
+    type: single_choice
+    options:
+      - "Selbst"
+      - "Rettung"
+      - "Mit dem Krücken"
+      - "Mit dem Rollstuhl"
+    
+  - id: can_walk
+    text: "Kann Patient Gehen?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: gait_deviation
+    text: "Ist Gang Bild auffällig?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: leg_axis_deviation
+    text: "Beinachse sind auffällig?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: unilateral_trauma
+    text: "Ist Verletzung einseitig?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: rest_position
+    text: "Gibt's Schonungsposition?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: intra_articular_effusion
+    text: "Gibt's intraartikuläre Erguss?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: knee_swelling
+    text: "Gibt's Schwellung im Bereich Kniegelenk?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: skin_damage
+    text: "Gibt's Haut Verletzung?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: open_joint
+    text: "Ist Gelenk geöffnet?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: patella_position
+    text: "Ist Knie Patella orthotopisch?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: patella_palpation
+    text: "Ist Knie Patella palpatorisch auffällig?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: femur_muscle_deviation
+    text: "Gibt's Auffälligkeiten in Muskulatur dist OS?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: tibia_muscle_deviation
+    text: "Gibt's Auffälligkeiten in Muskulatur prox US?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: meniscus_symptoms
+    text: "Gibt's Meniskus Symptomatik?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: steinmann_signs
+    text: "Steiman I/II Zeichen?"
+    type: single_choice
+    options:
+      - "I positiv, II negativ"
+      - "I negativ, II positiv"
+      - "Beide positiv"
+      - "Beide negativ"
+    
+  - id: proximal_tibia_pain
+    text: "Gibt's Druckschmerzen in prox Tibia Bereich?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: distal_femur_pain
+    text: "Gibt's Druckschmerzen in dist Epiphyse Femur Bereich?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: popliteal_pain
+    text: "Gibt's DS in Kniekehle Bereich?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: lachman_test
+    text: "Ist Lachman Test Pathologisch? (Schubladentest)"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: biomechanical_deviation
+    text: "Gibt's Biomechanische Auffälligkeiten?"
+    type: single_choice
+    options:
+      - "Ja"
+      - "Nein"
+    
+  - id: extension_amplitude
+    text: "Wie weit Extension aktiv/passive ist?"
+    type: text_input
+    placeholder: "Akt°/Pas°"
+    
+  - id: flexion_amplitude
+    text: "Wie weit Flexion aktiv/passive ist?"
+    type: text_input
+    placeholder: "Akt°/Pas°"
+    
+  - id: rotation_amplitude
+    text: "Wie weit Außer-/Innerrotation ist?"
+    type: text_input
+    placeholder: "Akt°/Pas°"
+    
+  - id: additional_info
+    text: "Wollen Sie was zusätzlich merken?"
+    type: optional_text
+    options:
+      - "Ja"
+      - "Nein"
+    follow_up_text: "Geben Sie zusätzliche Informationen ein:" 

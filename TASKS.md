@@ -1,104 +1,95 @@
-# Hospital Quiz Bot Implementation
+# Multilingual Support Implementation
 
-A Telegram bot for conducting medical quizzes, specifically knee examinations. The bot collects responses and uses OpenAI's GPT API to generate comprehensive medical reports.
+Adding support for multiple languages (Ukrainian and German) to the Hospital Quiz Bot.
 
 ## Completed Tasks
-- [x] Initial project planning
-- [x] Architecture design
-- [x] Setup project structure and environment
-- [x] Create quiz data structure
-- [x] Setup basic bot framework
-  - [x] Initialize aiogram bot
-  - [x] Create command handlers
-  - [x] Setup FSM for conversation management
-- [x] Configure database
-  - [x] Define database models
-  - [x] Create database connection utilities
-  - [x] Implement data access layer
-- [x] Implement quiz functionality
-  - [x] Create question loader from YAML/JSON
-  - [x] Implement quiz state machine
-  - [x] Design keyboard layouts for responses
-  - [x] Implement answer collection and validation
-- [x] Integrate with OpenAI
-  - [x] Setup API client
-  - [x] Implement prompt construction
-  - [x] Add error handling and retries
-  - [x] Create response parsing
-- [x] Build user interface
-  - [x] Design welcome message and instructions
-  - [x] Implement quiz navigation (next, previous, skip)
-  - [x] Add progress tracking
-  - [x] Create report display formatting
+- [x] Create German translation of quiz questions (quizes_de.yaml)
+- [x] Update README.md to reflect multilingual support
+- [x] Add language selection keyboard and handlers
+- [x] Update User model to store language preference
+- [x] Update QuizResponse model to track quiz language
+- [x] Add language-specific formatting to message formatters
+- [x] Modify QuizService to support loading different language quiz files
+- [x] Update quiz flow to respect user's language preference
+- [x] Create database migration for new language fields
+- [x] Run the migration script to update the database
+- [x] Fix quiz file path and parameter issues
+- [x] Fix untranslated buttons and messages
+- [x] Update all keyboard generators to support language-specific buttons
+- [x] Update all handlers to pass language parameter to keyboard functions
+- [x] Translate confirmation and report generation messages
+- [x] Fix report generation to handle both string and dictionary report formats
+- [x] Add language-specific OpenAI prompts for report generation
+- [x] Implement language-specific report templates
 
 ## In Progress Tasks
-- [ ] Add admin features
-  - [ ] Usage statistics
-  - [ ] Error reporting
-  - [ ] User management
+- [ ] Test the language selection and switching functionality
 
 ## Future Tasks
-- [ ] Deploy and test
-  - [ ] Setup logging
-  - [ ] Create Docker container
-  - [ ] Deploy to production server
-  - [ ] Perform user acceptance testing
+- [ ] Add more languages (English, French, etc.)
+- [ ] Create admin interface for managing translations
+- [ ] Implement automatic language detection from user's Telegram language
+- [ ] Add language-specific voice messages for quiz questions
 
 ## Relevant Files
-- `Architecture.md` - ✅ Overall project structure and design
-- `TASKS.md` - ✅ Implementation plan and task tracking
-- `prompts.md` - ✅ ChatGPT prompts for report generation
-- `quizes.yaml` - ✅ Quiz questions and answer options
-- `project_structure.md` - ✅ Recommended project file organization
-- `README.md` - ✅ Project documentation and setup instructions
-- `requirements.txt` - ✅ Python dependencies
-- `hospital_quiz_bot/bot.py` - ✅ Main entry point
-- `hospital_quiz_bot/config/settings.py` - ✅ Configuration settings
-- `hospital_quiz_bot/config/logging_config.py` - ✅ Logging configuration
-- `hospital_quiz_bot/app/models/base.py` - ✅ Base database model
-- `hospital_quiz_bot/app/models/user.py` - ✅ User model
-- `hospital_quiz_bot/app/models/quiz_response.py` - ✅ Quiz response model
-- `hospital_quiz_bot/app/database/connection.py` - ✅ Database connection
-- `hospital_quiz_bot/app/database/repository.py` - ✅ Data access patterns
-- `hospital_quiz_bot/app/services/quiz_service.py` - ✅ Quiz management
-- `hospital_quiz_bot/app/services/openai_service.py` - ✅ OpenAI integration
-- `hospital_quiz_bot/app/services/report_service.py` - ✅ Report generation
-- `hospital_quiz_bot/app/handlers/commands.py` - ✅ Command handlers
-- `hospital_quiz_bot/app/handlers/quiz.py` - ✅ Quiz handlers
-- `hospital_quiz_bot/app/handlers/report.py` - ✅ Report handlers
-- `hospital_quiz_bot/app/keyboards/reply.py` - ✅ Reply keyboards
-- `hospital_quiz_bot/app/keyboards/inline.py` - ✅ Inline keyboards
-- `hospital_quiz_bot/app/states/quiz_states.py` - ✅ FSM states
-- `hospital_quiz_bot/app/utils/formatters.py` - ✅ Text formatting
+- `/hospital_quiz_bot/app/models/user.py` - ✅ Added language field to User model
+- `/hospital_quiz_bot/app/models/quiz_response.py` - ✅ Added language field to QuizResponse model
+- `/hospital_quiz_bot/app/utils/formatters.py` - ✅ Updated formatters with language support
+- `/hospital_quiz_bot/app/services/quiz_service.py` - ✅ Modified to load different language files
+- `/hospital_quiz_bot/app/handlers/commands.py` - ✅ Added language selection handlers
+- `/hospital_quiz_bot/app/handlers/quiz.py` - ✅ Updated to respect user's language
+- `/hospital_quiz_bot/app/handlers/report.py` - ✅ Updated report handlers with language support
+- `/hospital_quiz_bot/app/keyboards/reply.py` - ✅ Added language-specific keyboard buttons
+- `/hospital_quiz_bot/app/keyboards/inline.py` - ✅ Added language-specific inline keyboard buttons
+- `/hospital_quiz_bot/app/states/quiz_states.py` - ✅ Added UserStates for language selection
+- `/hospital_quiz_bot/app/database/repository.py` - ✅ Added create_new method to QuizResponseRepository
+- `/hospital_quiz_bot/app/database/migrations/add_language_fields.py` - ✅ Created migration script
+- `/hospital_quiz_bot/data/quizes_de.yaml` - ✅ Added German translation of quiz questions
+- `/hospital_quiz_bot/data/prompts.md` - ✅ Added German prompt for report generation
+- `/hospital_quiz_bot/app/services/openai_service.py` - ✅ Updated to support language-specific prompts
+- `/hospital_quiz_bot/app/services/report_service.py` - ✅ Updated to pass language to OpenAI service
+- `/README.md` - ✅ Updated to reflect multilingual support
 
 ## Implementation Plan
+1. The user can select their preferred language during initial bot startup or change it later
+2. Language preference is stored in the User model and used throughout the application
+3. Quiz questions are loaded from language-specific YAML files
+4. All UI messages and buttons are translated according to the user's language preference
+5. Reports are generated in the user's preferred language using language-specific OpenAI prompts
 
-### Phase 1: Project Setup (Days 1-2) ✅
-- Set up development environment
-- Create project structure
-- Configure dependencies
-- Set up version control
+## Issues Fixed
+1. Moved the German quiz file to the correct location (hospital_quiz_bot/data/quizes_de.yaml)
+2. Fixed the path in QuizService to correctly locate the German quiz file
+3. Updated cancel_button and main_menu_button handlers to pass session_pool parameter
+4. Fixed untranslated UI elements:
+   - Added language parameter to all keyboard generation functions
+   - Updated all handlers to pass language preference to keyboards
+   - Added German translations for all button labels
+   - Added language-specific messages for errors and confirmations
+   - Updated all handlers to recognize German button presses
+5. Fixed report generation issues:
+   - Added create_new method to QuizResponseRepository
+   - Updated format_report_message to handle both string and dictionary inputs
+   - Updated report handlers to use language-specific messages and buttons
+6. Added German report generation support:
+   - Added German prompt template to prompts.md
+   - Updated OpenAIService to load and use German prompts
+   - Updated ReportService to pass language parameter to OpenAI calls
+   - Modified handlers to initialize ReportService with the correct language
 
-### Phase 2: Core Bot Framework (Days 3-5) ✅
-- Implement basic bot functionality
-- Create state machine for quiz flow
-- Design database schema
-- Implement data persistence
+## Running the Migration
+To apply the database changes, run the migration script:
+```bash
+cd hospital_quiz_bot
+python -m app.database.migrations.add_language_fields
+```
 
-### Phase 3: Quiz System (Days 6-9) ✅
-- Create the question management system
-- Implement quiz navigation
-- Build answer collection mechanisms
-- Design user interface elements
-
-### Phase 4: OpenAI Integration (Days 10-12) ✅
-- Integrate with OpenAI API
-- Design and test prompt templates
-- Implement report generation
-- Add error handling
-
-### Phase 5: Refinement and Deployment (Days 13-15)
-- Add admin features
-- Implement logging and monitoring
-- Create deployment configuration
-- Perform testing and bug fixes 
+## Testing Instructions
+1. Start the bot using `python -m hospital_quiz_bot.bot`
+2. Send `/start` to the bot and select a language
+3. Start a quiz with `/quiz` and verify questions appear in the selected language
+4. Try changing the language with the "🌐 Змінити мову" or "🌐 Sprache ändern" button
+5. Verify that new quizzes use the updated language
+6. Check that all buttons and messages appear in the correct language
+7. Complete a quiz and verify that the report is displayed correctly in the selected language
+8. Verify that reports are generated in the correct language with appropriate medical terminology 

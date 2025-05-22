@@ -4,7 +4,7 @@ A Telegram bot for conducting medical knee examination quizzes and generating pr
 
 ## Description
 
-This bot conducts structured medical quizzes specifically for knee examinations in Ukrainian. It collects user responses through an interactive Telegram interface and uses OpenAI's GPT-4o-mini model to generate human-like, professional medical reports based on the examination data.
+This bot conducts structured medical quizzes specifically for knee examinations in multiple languages (Ukrainian and German). It collects user responses through an interactive Telegram interface and uses OpenAI's GPT-4o-mini model to generate human-like, professional medical reports based on the examination data.
 
 ### Key Features
 
@@ -13,7 +13,7 @@ This bot conducts structured medical quizzes specifically for knee examinations 
 - Session management to save progress
 - AI-powered report generation
 - Previous reports storage and retrieval
-- User-friendly Ukrainian language interface
+- Multilingual support (Ukrainian and German)
 
 ## Technology Stack
 

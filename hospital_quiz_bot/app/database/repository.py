@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from hospital_quiz_bot.app.models.base import BaseModel
 from hospital_quiz_bot.app.models.user import User
 from hospital_quiz_bot.app.models.quiz_response import QuizResponse
+from hospital_quiz_bot.config.logging_config import logger
 
 # Generic type for model classes
 T = TypeVar("T", bound=BaseModel)
@@ -119,4 +120,20 @@ class QuizResponseRepository(BaseRepository[QuizResponse]):
             QuizResponse.is_complete == True
         ).order_by(QuizResponse.created_at.desc())
         result = await self.session.execute(stmt)
-        return list(result.scalars().all()) 
+        return list(result.scalars().all())
+        
+    async def create_new(self, user_id: int, session_id: str, language: str = "uk") -> Optional[QuizResponse]:
+        """Create a new quiz response record."""
+        quiz_response = QuizResponse(
+            user_id=user_id,
+            session_id=session_id,
+            responses={},
+            is_complete=False,
+            language=language,
+        )
+        
+        try:
+            return await self.add(quiz_response)
+        except Exception as e:
+            logger.error(f"Failed to create quiz response: {str(e)}")
+            return None 

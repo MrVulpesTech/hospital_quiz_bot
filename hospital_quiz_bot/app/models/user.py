@@ -28,6 +28,9 @@ class User(BaseModel):
     is_admin = Column(Boolean, default=False, nullable=False)
     is_blocked = Column(Boolean, default=False, nullable=False)
     
+    # User preferences
+    language = Column(String, nullable=True)  # 'uk' for Ukrainian, 'de' for German
+    
     def __repr__(self) -> str:
         """Return a string representation of the User."""
         return f"<User(id={self.id}, telegram_id={self.telegram_id}, username={self.username})>"

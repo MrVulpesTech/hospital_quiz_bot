@@ -32,6 +32,9 @@ class QuizResponse(BaseModel):
     # Session information
     session_id = Column(String, nullable=False, index=True)
     
+    # Language information
+    language = Column(String, default="uk", nullable=False)  # 'uk' for Ukrainian, 'de' for German
+    
     def __repr__(self) -> str:
         """Return a string representation of the QuizResponse."""
         return f"<QuizResponse(id={self.id}, user_id={self.user_id}, is_complete={self.is_complete})>"

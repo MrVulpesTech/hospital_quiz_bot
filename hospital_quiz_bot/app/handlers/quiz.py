@@ -7,7 +7,7 @@ import uuid
 from typing import Dict, Any, Optional, Union, List
 
 from aiogram import Router, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
@@ -39,74 +39,83 @@ router = Router()
 @router.message(Command("quiz"))
 async def cmd_quiz(message: Message, state: FSMContext, session_pool):
     """Handle the /quiz command."""
-    # Clear any previous state
-    await state.clear()
+    # Get user's language preference
+    language = "uk"  # Default to Ukrainian
     
-    # Send the intro message
-    await message.answer(
-        format_quiz_start_message(),
-    )
+    async with session_pool() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_telegram_id(message.from_user.id)
+        if user and user.language:
+            language = user.language
     
     # Create a new quiz session
-    quiz_service = QuizService()
+    quiz_service = QuizService(language)
+    quiz_service.set_language(language)
     session_id = quiz_service.create_new_session()
     
-    # Get the first question
-    first_question = quiz_service.get_question_by_index(0)
-    
-    # Store data in the state
+    # Store the session ID in FSM state
     await state.update_data(
         session_id=session_id,
         current_question_index=0,
-        current_question_id=first_question["id"],
+        current_question_id=quiz_service.get_question_by_index(0)["id"],
+        language=language,  # Store the language preference
     )
     
-    # Create a new quiz response in the database
+    # Create a new quiz response record
     async with session_pool() as session:
-        user_repo = UserRepository(session)
         quiz_repo = QuizResponseRepository(session)
         
-        user = await user_repo.get_by_telegram_id(message.from_user.id)
-        if not user:
-            user = await user_repo.get_or_create_user(message.from_user)
-        
         # Create a new quiz response
-        quiz_response = QuizResponse(
-            user_id=user.id,
+        quiz_response = await quiz_repo.create_new(
+            user_id=message.from_user.id,
             session_id=session_id,
-            responses={},
-            is_complete=False,
+            language=language,  # Set the language for the quiz response
         )
         
-        await quiz_repo.add(quiz_response)
+        if not quiz_response:
+            # Handle error
+            error_message = "Помилка: Не вдалося створити нове опитування. Спробуйте ще раз."
+            if language == "de":
+                error_message = "Fehler: Konnte keine neue Umfrage erstellen. Bitte versuchen Sie es erneut."
+                
+            await message.answer(
+                error_message,
+                reply_markup=get_main_keyboard(language),
+            )
+            return
+        
         await quiz_repo.commit()
     
-    # Set the state to answering
+    # Move to the answering state
     await state.set_state(QuizStates.answering)
     
-    # Send the first question
+    # Get the first question
+    first_question = quiz_service.get_question_by_index(0)
     question_text = quiz_service.format_question_text(first_question)
+    
     formatted_question = format_question(
         question_text,
         0,
         quiz_service.get_total_questions(),
+        language,
     )
     
+    # Send the first question with appropriate keyboard
     if first_question["type"] in ["single_choice", "optional_text"]:
         # For questions with options
         options = first_question["options"]
         await message.answer(
             formatted_question,
-            reply_markup=get_quiz_options_keyboard(options),
+            reply_markup=get_quiz_options_keyboard(options, language),
         )
     else:
         # For text input questions
         await message.answer(
             formatted_question,
-            reply_markup=get_cancel_keyboard(),
+            reply_markup=get_cancel_keyboard(language),
         )
     
-    logger.info(f"User {message.from_user.id} started a new quiz with session ID {session_id}")
+    logger.info(f"User {message.from_user.id} started a new quiz with session ID {session_id} in language {language}")
 
 
 @router.message(QuizStates.answering, F.text)
@@ -117,9 +126,11 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
     session_id = data.get("session_id")
     current_question_index = data.get("current_question_index", 0)
     current_question_id = data.get("current_question_id")
+    language = data.get("language", "uk")  # Get the language from state
     
-    # Initialize quiz service
-    quiz_service = QuizService()
+    # Initialize quiz service with language
+    quiz_service = QuizService(language)
+    quiz_service.set_language(language)
     
     # Get the current question
     current_question = quiz_service.get_question_by_id(current_question_id)
@@ -127,7 +138,7 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
     # Check if the answer is valid
     if not quiz_service.is_valid_answer(current_question_id, message.text):
         # Special case for navigation commands
-        if message.text == "⬅️ Назад":
+        if message.text == "⬅️ Назад" or message.text == "⬅️ Zurück":
             # Go back to the previous question
             if current_question_index > 0:
                 new_index = current_question_index - 1
@@ -144,6 +155,7 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
                     question_text,
                     new_index,
                     quiz_service.get_total_questions(),
+                    language,
                 )
                 
                 if new_question["type"] in ["single_choice", "optional_text"]:
@@ -151,27 +163,31 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
                     options = new_question["options"]
                     await message.answer(
                         formatted_question,
-                        reply_markup=get_quiz_options_keyboard(options),
+                        reply_markup=get_quiz_options_keyboard(options, language),
                     )
                 else:
                     # For text input questions
                     await message.answer(
                         formatted_question,
-                        reply_markup=get_cancel_keyboard(),
+                        reply_markup=get_cancel_keyboard(language),
                     )
                 
                 return
             else:
                 # If we're at the first question, inform the user
-                await message.answer(
-                    "Це перше питання. Неможливо повернутися назад."
-                )
+                first_question_message = "Це перше питання. Неможливо повернутися назад."
+                if language == "de":
+                    first_question_message = "Dies ist die erste Frage. Es ist nicht möglich, zurückzugehen."
+                
+                await message.answer(first_question_message)
                 return
         
         # If the answer is not valid and not a navigation command
-        await message.answer(
-            f"Будь ласка, виберіть або введіть правильну відповідь для цього питання."
-        )
+        invalid_answer_message = "Будь ласка, виберіть або введіть правильну відповідь для цього питання."
+        if language == "de":
+            invalid_answer_message = "Bitte wählen Sie oder geben Sie eine gültige Antwort für diese Frage ein."
+            
+        await message.answer(invalid_answer_message)
         return
     
     # Store the answer
@@ -181,9 +197,14 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
         quiz_response = await quiz_repo.get_by_session_id(session_id)
         if not quiz_response:
             logger.error(f"Quiz session not found: {session_id}")
+            
+            error_message = "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову."
+            if language == "de":
+                error_message = "Fehler: Sitzung nicht gefunden. Bitte starten Sie die Umfrage erneut."
+                
             await message.answer(
-                "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову.",
-                reply_markup=get_main_keyboard(),
+                error_message,
+                reply_markup=get_main_keyboard(language),
             )
             await state.clear()
             return
@@ -193,7 +214,7 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
         await quiz_repo.commit()
     
     # Check for special case of optional_text
-    if current_question["type"] == "optional_text" and message.text == "Так":
+    if current_question["type"] == "optional_text" and (message.text == "Так" or message.text == "Ja"):
         # We need to collect additional text input
         await state.update_data(
             awaiting_follow_up=True,
@@ -201,9 +222,13 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
         
         await state.set_state(QuizStates.text_input)
         
+        follow_up_text = current_question.get("follow_up_text", "Введіть додаткову інформацію:")
+        if language == "de" and not follow_up_text.startswith("Geben Sie"):
+            follow_up_text = "Geben Sie zusätzliche Informationen ein:"
+            
         await message.answer(
-            current_question.get("follow_up_text", "Введіть додаткову інформацію:"),
-            reply_markup=get_cancel_keyboard(),
+            follow_up_text,
+            reply_markup=get_cancel_keyboard(language),
         )
         return
     
@@ -225,6 +250,7 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
             question_text,
             next_index,
             quiz_service.get_total_questions(),
+            language,
         )
         
         if next_question["type"] in ["single_choice", "optional_text"]:
@@ -232,13 +258,13 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
             options = next_question["options"]
             await message.answer(
                 formatted_question,
-                reply_markup=get_quiz_options_keyboard(options),
+                reply_markup=get_quiz_options_keyboard(options, language),
             )
         else:
             # For text input questions
             await message.answer(
                 formatted_question,
-                reply_markup=get_cancel_keyboard(),
+                reply_markup=get_cancel_keyboard(language),
             )
     else:
         # No more questions, move to confirmation
@@ -254,11 +280,12 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
         confirmation_message = format_quiz_confirmation_message(
             responses,
             quiz_service.get_all_questions(),
+            language,
         )
         
         await message.answer(
             confirmation_message,
-            reply_markup=get_confirmation_keyboard(),
+            reply_markup=get_confirmation_keyboard(language),
         )
 
 
@@ -270,12 +297,17 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
     session_id = data.get("session_id")
     current_question_id = data.get("current_question_id")
     awaiting_follow_up = data.get("awaiting_follow_up", False)
+    language = data.get("language", "uk")  # Get language from state
     
     if not awaiting_follow_up:
         # If we're not awaiting follow-up, this is unexpected
+        error_message = "Помилка: Несподіваний стан. Будь ласка, почніть опитування знову."
+        if language == "de":
+            error_message = "Fehler: Unerwarteter Zustand. Bitte starten Sie die Umfrage erneut."
+            
         await message.answer(
-            "Помилка: Несподіваний стан. Будь ласка, почніть опитування знову.",
-            reply_markup=get_main_keyboard(),
+            error_message,
+            reply_markup=get_main_keyboard(language),
         )
         await state.clear()
         return
@@ -287,9 +319,14 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
         quiz_response = await quiz_repo.get_by_session_id(session_id)
         if not quiz_response:
             logger.error(f"Quiz session not found: {session_id}")
+            
+            error_message = "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову."
+            if language == "de":
+                error_message = "Fehler: Sitzung nicht gefunden. Bitte starten Sie die Umfrage erneut."
+                
             await message.answer(
-                "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову.",
-                reply_markup=get_main_keyboard(),
+                error_message,
+                reply_markup=get_main_keyboard(language),
             )
             await state.clear()
             return
@@ -307,8 +344,9 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
     # Continue to the next question
     await state.set_state(QuizStates.answering)
     
-    # Initialize quiz service
-    quiz_service = QuizService()
+    # Initialize quiz service with language
+    quiz_service = QuizService(language)
+    quiz_service.set_language(language)
     
     # Get the current index and move to the next question
     current_question_index = data.get("current_question_index", 0)
@@ -329,6 +367,7 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
             question_text,
             next_index,
             quiz_service.get_total_questions(),
+            language,
         )
         
         if next_question["type"] in ["single_choice", "optional_text"]:
@@ -336,13 +375,13 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
             options = next_question["options"]
             await message.answer(
                 formatted_question,
-                reply_markup=get_quiz_options_keyboard(options),
+                reply_markup=get_quiz_options_keyboard(options, language),
             )
         else:
             # For text input questions
             await message.answer(
                 formatted_question,
-                reply_markup=get_cancel_keyboard(),
+                reply_markup=get_cancel_keyboard(language),
             )
     else:
         # No more questions, move to confirmation
@@ -358,20 +397,22 @@ async def process_text_input(message: Message, state: FSMContext, session_pool):
         confirmation_message = format_quiz_confirmation_message(
             responses,
             quiz_service.get_all_questions(),
+            language,
         )
         
         await message.answer(
             confirmation_message,
-            reply_markup=get_confirmation_keyboard(),
+            reply_markup=get_confirmation_keyboard(language),
         )
 
 
-@router.message(QuizStates.confirmation, F.text == "✅ Так, завершити")
+@router.message(QuizStates.confirmation, F.text.in_(["✅ Так, завершити", "✅ Ja, abschließen"]))
 async def confirm_quiz(message: Message, state: FSMContext, session_pool):
     """Handle quiz confirmation and generate report."""
     # Get the state data
     data = await state.get_data()
     session_id = data.get("session_id")
+    language = data.get("language", "uk")
     
     # Mark the quiz as complete
     async with session_pool() as session:
@@ -380,9 +421,14 @@ async def confirm_quiz(message: Message, state: FSMContext, session_pool):
         quiz_response = await quiz_repo.get_by_session_id(session_id)
         if not quiz_response:
             logger.error(f"Quiz session not found: {session_id}")
+            
+            error_message = "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову."
+            if language == "de":
+                error_message = "Fehler: Sitzung nicht gefunden. Bitte starten Sie die Umfrage erneut."
+                
             await message.answer(
-                "Помилка: Сесію опитування не знайдено. Будь ласка, почніть опитування знову.",
-                reply_markup=get_main_keyboard(),
+                error_message,
+                reply_markup=get_main_keyboard(language),
             )
             await state.clear()
             return
@@ -396,20 +442,25 @@ async def confirm_quiz(message: Message, state: FSMContext, session_pool):
     
     # Send the generating message
     await message.answer(
-        format_report_generation_message(),
-        reply_markup=get_cancel_keyboard(),
+        format_report_generation_message(language),
+        reply_markup=get_cancel_keyboard(language),
     )
     
     # Generate the report
     async with session_pool() as session:
-        report_service = ReportService(session)
+        report_service = ReportService(session, language=language)
         report = await report_service.generate_report_from_session(session_id)
     
     if not report:
         logger.error(f"Failed to generate report for session: {session_id}")
+        
+        error_message = "Помилка: Не вдалося згенерувати звіт. Будь ласка, спробуйте ще раз."
+        if language == "de":
+            error_message = "Fehler: Bericht konnte nicht erstellt werden. Bitte versuchen Sie es erneut."
+            
         await message.answer(
-            "Помилка: Не вдалося згенерувати звіт. Будь ласка, спробуйте ще раз.",
-            reply_markup=get_main_keyboard(),
+            error_message,
+            reply_markup=get_main_keyboard(language),
         )
         await state.clear()
         return
@@ -418,7 +469,7 @@ async def confirm_quiz(message: Message, state: FSMContext, session_pool):
     await state.set_state(QuizStates.viewing_report)
     
     # Format and send the report
-    formatted_report = format_report_message(report)
+    formatted_report = format_report_message(report, language)
     
     if isinstance(formatted_report, list):
         # If the report is split into multiple messages
@@ -429,25 +480,32 @@ async def confirm_quiz(message: Message, state: FSMContext, session_pool):
         await message.answer(formatted_report)
     
     # Send the actions keyboard
+    report_actions_message = "Що ви хочете зробити зі звітом?"
+    if language == "de":
+        report_actions_message = "Was möchten Sie mit dem Bericht tun?"
+        
     await message.answer(
-        "Що ви хочете зробити зі звітом?",
-        reply_markup=get_report_actions_keyboard(),
+        report_actions_message,
+        reply_markup=get_report_actions_keyboard(language),
     )
     
     logger.info(f"Generated report for user {message.from_user.id}, session {session_id}")
 
 
-@router.message(QuizStates.confirmation, F.text == "⬅️ Повернутися до питань")
+@router.message(QuizStates.confirmation, F.text.in_(["⬅️ Повернутися до питань", "⬅️ Zurück zu den Fragen"]))
 async def return_to_questions(message: Message, state: FSMContext):
     """Handle returning to questions from confirmation."""
     # Get the state data
     data = await state.get_data()
+    language = data.get("language", "uk")
     
     # Go back to the answering state
     await state.set_state(QuizStates.answering)
     
     # Go back to the last question
-    quiz_service = QuizService()
+    quiz_service = QuizService(language)
+    quiz_service.set_language(language)
+    
     last_index = quiz_service.get_total_questions() - 1
     last_question = quiz_service.get_question_by_index(last_index)
     
@@ -462,6 +520,7 @@ async def return_to_questions(message: Message, state: FSMContext):
         question_text,
         last_index,
         quiz_service.get_total_questions(),
+        language,
     )
     
     if last_question["type"] in ["single_choice", "optional_text"]:
@@ -469,13 +528,13 @@ async def return_to_questions(message: Message, state: FSMContext):
         options = last_question["options"]
         await message.answer(
             formatted_question,
-            reply_markup=get_quiz_options_keyboard(options),
+            reply_markup=get_quiz_options_keyboard(options, language),
         )
     else:
         # For text input questions
         await message.answer(
             formatted_question,
-            reply_markup=get_cancel_keyboard(),
+            reply_markup=get_cancel_keyboard(language),
         )
     
     logger.info(f"User {message.from_user.id} returned to questions from confirmation") 

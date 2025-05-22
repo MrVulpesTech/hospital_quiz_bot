@@ -27,10 +27,19 @@ async def cmd_reports(message: Message, state: FSMContext, session_pool):
     # Clear any previous state
     await state.clear()
     
+    # Get user's language preference
+    language = "uk"  # Default to Ukrainian
+    
+    async with session_pool() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_telegram_id(message.from_user.id)
+        if user and user.language:
+            language = user.language
+    
     # Get the user's reports
     async with session_pool() as session:
         user_repo = UserRepository(session)
-        report_service = ReportService(session)
+        report_service = ReportService(session, language=language)
         
         user = await user_repo.get_by_telegram_id(message.from_user.id)
         if not user:
@@ -39,7 +48,7 @@ async def cmd_reports(message: Message, state: FSMContext, session_pool):
         reports = await report_service.get_reports_for_user(user.id)
     
     # Format the message based on whether there are reports
-    formatted_message = format_reports_list_message(len(reports))
+    formatted_message = format_reports_list_message(len(reports), language)
     
     # Set the state to listing
     await state.set_state(ReportStates.listing)
@@ -51,13 +60,13 @@ async def cmd_reports(message: Message, state: FSMContext, session_pool):
         # If no reports, just show the main keyboard
         await message.answer(
             formatted_message,
-            reply_markup=get_main_keyboard(),
+            reply_markup=get_main_keyboard(language),
         )
     else:
         # If there are reports, show the reports keyboard
         await message.answer(
             formatted_message,
-            reply_markup=get_reports_keyboard(reports),
+            reply_markup=get_reports_keyboard(reports, language),
         )
     
     logger.info(f"User {message.from_user.id} requested reports list")
@@ -69,15 +78,28 @@ async def view_report(callback: CallbackQuery, state: FSMContext, session_pool):
     # Extract the session ID from the callback data
     session_id = callback.data.split(":", 1)[1]
     
+    # Get user's language preference
+    language = "uk"  # Default to Ukrainian
+    
+    async with session_pool() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_telegram_id(callback.from_user.id)
+        if user and user.language:
+            language = user.language
+    
     # Get the report
     async with session_pool() as session:
-        report_service = ReportService(session)
+        report_service = ReportService(session, language=language)
         report = await report_service.get_report(session_id)
     
     if not report:
+        error_message = "Помилка: Звіт не знайдено. Будь ласка, спробуйте ще раз."
+        if language == "de":
+            error_message = "Fehler: Bericht nicht gefunden. Bitte versuchen Sie es erneut."
+            
         await callback.message.answer(
-            "Помилка: Звіт не знайдено. Будь ласка, спробуйте ще раз.",
-            reply_markup=get_main_keyboard(),
+            error_message,
+            reply_markup=get_main_keyboard(language),
         )
         await callback.answer()
         await state.clear()
@@ -92,7 +114,7 @@ async def view_report(callback: CallbackQuery, state: FSMContext, session_pool):
     )
     
     # Format and send the report
-    formatted_report = format_report_message(report)
+    formatted_report = format_report_message(report, language)
     
     if isinstance(formatted_report, list):
         # If the report is split into multiple messages
@@ -103,9 +125,13 @@ async def view_report(callback: CallbackQuery, state: FSMContext, session_pool):
         await callback.message.answer(formatted_report)
     
     # Send the actions keyboard
+    report_actions_message = "Що ви хочете зробити зі звітом?"
+    if language == "de":
+        report_actions_message = "Was möchten Sie mit dem Bericht tun?"
+        
     await callback.message.answer(
-        "Що ви хочете зробити зі звітом?",
-        reply_markup=get_report_actions_keyboard(session_id),
+        report_actions_message,
+        reply_markup=get_report_actions_keyboard(language),
     )
     
     # Answer the callback
