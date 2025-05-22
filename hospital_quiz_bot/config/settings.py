@@ -4,7 +4,6 @@ This module loads environment variables and provides configuration settings for 
 """
 
 import os
-import yaml
 from pathlib import Path
 from typing import Dict, Any, Optional
 
@@ -13,17 +12,9 @@ from pydantic import BaseModel, Field
 
 # Determine the base directory of the project
 BASE_DIR = Path(__file__).parent.parent
-PROJECT_ROOT = BASE_DIR.parent
 
-# Try to load environment variables from .env file first
-load_dotenv(PROJECT_ROOT / ".env", override=True)
-
-# Then try to load from config.yaml if it exists
-CONFIG_YAML_PATH = PROJECT_ROOT / "config.yaml"
-yaml_config = {}
-if CONFIG_YAML_PATH.exists():
-    with open(CONFIG_YAML_PATH, "r", encoding="utf-8") as f:
-        yaml_config = yaml.safe_load(f) or {}
+# Load environment variables from .env file
+load_dotenv(BASE_DIR / ".env")
 
 
 class TelegramSettings(BaseModel):
@@ -53,63 +44,33 @@ class AppSettings(BaseModel):
     telegram: TelegramSettings
     database: DatabaseSettings
     openai: OpenAISettings
-    quiz_file: Path = Field(PROJECT_ROOT / "quizes.yaml", description="Path to quiz questions file")
-    quiz_file_de: Optional[Path] = Field(PROJECT_ROOT / "quizes_de.yaml", description="Path to German quiz questions file")
-    prompts_file: Path = Field(PROJECT_ROOT / "prompts.md", description="Path to prompts file")
+    quiz_file: Path = Field(BASE_DIR / "data" / "quizes.yaml", description="Path to quiz questions file")
+    prompts_file: Path = Field(BASE_DIR / "data" / "prompts.md", description="Path to prompts file")
     log_level: str = Field("INFO", description="Logging level")
 
 
 def load_settings() -> AppSettings:
-    """Load settings from environment variables and/or YAML config"""
-    
-    # Get telegram settings
-    telegram_config = yaml_config.get("telegram", {})
-    telegram_token = os.getenv("TELEGRAM_BOT_TOKEN") or telegram_config.get("token", "")
-    admin_user_id_str = os.getenv("ADMIN_USER_ID") or str(telegram_config.get("admin_user_id", "0"))
-    admin_user_id = int(admin_user_id_str) if admin_user_id_str and admin_user_id_str != "None" else None
-    polling_timeout = int(os.getenv("POLLING_TIMEOUT", str(telegram_config.get("polling_timeout", "30"))))
-    
-    # Get database settings
-    db_config = yaml_config.get("database", {})
-    db_url = os.getenv("DATABASE_URL") or db_config.get("url", "sqlite:///" + str(PROJECT_ROOT / "bot_database.db"))
-    db_echo = os.getenv("DATABASE_ECHO", str(db_config.get("echo", "False"))).lower() == "true"
-    
-    # Get OpenAI settings
-    openai_config = yaml_config.get("openai", {})
-    openai_api_key = os.getenv("OPENAI_API_KEY") or openai_config.get("api_key", "")
-    openai_model = os.getenv("OPENAI_MODEL") or openai_config.get("model", "gpt-4o-mini")
-    openai_temp = float(os.getenv("OPENAI_TEMPERATURE") or str(openai_config.get("temperature", "0.7")))
-    openai_max_tokens = int(os.getenv("OPENAI_MAX_TOKENS") or str(openai_config.get("max_tokens", "2000")))
-    openai_top_p = float(os.getenv("OPENAI_TOP_P") or str(openai_config.get("top_p", "0.95")))
-    
-    # Get app settings
-    app_config = yaml_config.get("app", {})
-    quiz_file = os.getenv("QUIZ_FILE") or app_config.get("quiz_file", str(PROJECT_ROOT / "quizes.yaml"))
-    quiz_file_de = os.getenv("QUIZ_FILE_DE") or app_config.get("quiz_file_de", str(PROJECT_ROOT / "quizes_de.yaml"))
-    prompts_file = os.getenv("PROMPTS_FILE") or app_config.get("prompts_file", str(PROJECT_ROOT / "prompts.md"))
-    log_level = os.getenv("LOG_LEVEL") or app_config.get("log_level", "INFO")
-    
+    """Load settings from environment variables"""
     return AppSettings(
         telegram=TelegramSettings(
-            token=telegram_token,
-            admin_user_id=admin_user_id,
-            polling_timeout=polling_timeout,
+            token=os.getenv("TELEGRAM_BOT_TOKEN", ""),
+            admin_user_id=int(os.getenv("ADMIN_USER_ID", "0")) if os.getenv("ADMIN_USER_ID") else None,
+            polling_timeout=int(os.getenv("POLLING_TIMEOUT", "30")),
         ),
         database=DatabaseSettings(
-            url=db_url,
-            echo=db_echo,
+            url=os.getenv("DATABASE_URL", "sqlite:///" + str(BASE_DIR / "bot_database.db")),
+            echo=os.getenv("DATABASE_ECHO", "False").lower() == "true",
         ),
         openai=OpenAISettings(
-            api_key=openai_api_key,
-            model=openai_model,
-            temperature=openai_temp,
-            max_tokens=openai_max_tokens,
-            top_p=openai_top_p,
+            api_key=os.getenv("OPENAI_API_KEY", ""),
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            temperature=float(os.getenv("OPENAI_TEMPERATURE", "0.7")),
+            max_tokens=int(os.getenv("OPENAI_MAX_TOKENS", "2000")),
+            top_p=float(os.getenv("OPENAI_TOP_P", "0.95")),
         ),
-        quiz_file=Path(quiz_file),
-        quiz_file_de=Path(quiz_file_de) if quiz_file_de else None,
-        prompts_file=Path(prompts_file),
-        log_level=log_level,
+        quiz_file=Path(os.getenv("QUIZ_FILE", str(BASE_DIR / "data" / "quizes.yaml"))),
+        prompts_file=Path(os.getenv("PROMPTS_FILE", str(BASE_DIR / "data" / "prompts.md"))),
+        log_level=os.getenv("LOG_LEVEL", "INFO"),
     )
 
 
