@@ -1,0 +1,27 @@
+[Unit]
+Description=Hospital Quiz Bot Telegram Service
+After=network.target
+
+[Service]
+Type=simple
+User=hospital_bot
+Group=hospital_bot
+WorkingDirectory=/opt/hospital_quiz_bot
+ExecStart=/opt/hospital_quiz_bot/venv/bin/python -m hospital_quiz_bot.bot
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=hospital_quiz_bot
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/opt/hospital_quiz_bot
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=full
+NoNewPrivileges=true
+ProtectHome=true
+ProtectControlGroups=true
+
+[Install]
+WantedBy=multi-user.target 
