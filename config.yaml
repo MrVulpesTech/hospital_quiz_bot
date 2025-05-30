@@ -1,0 +1,27 @@
+# Hospital Quiz Bot Configuration
+
+# Telegram Bot settings
+telegram:
+  token: "your_telegram_bot_token_here"  # Replace with actual bot token
+  admin_user_id: null  # Optional: Set to your Telegram user ID for admin features
+  polling_timeout: 30
+
+# Database settings
+database:
+  url: "sqlite:///bot_database.db"
+  echo: false
+
+# OpenAI API settings
+openai:
+  api_key: "your_openai_api_key_here"  # Replace with actual OpenAI API key
+  model: "gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 2000
+  top_p: 0.95
+
+# Application settings
+app:
+  quiz_file: "/opt/hospital_quiz_bot/quizes.yaml"  # Path to main quiz questions file
+  quiz_file_de: "/opt/hospital_quiz_bot/quizes_de.yaml"  # Path to German quiz questions file
+  prompts_file: "/opt/hospital_quiz_bot/prompts.md"  # Path to prompts file
+  log_level: "INFO" 

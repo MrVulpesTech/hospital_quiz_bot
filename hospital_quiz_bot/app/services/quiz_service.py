@@ -1,6 +1,9 @@
 """
 Quiz service for the Hospital Quiz Bot.
 This module provides functionality for loading and managing quiz questions.
+
+Fixed bug: Added check in set_language() method to prevent unnecessary repeated 
+operations and log spam when the same language is set multiple times.
 """
 
 import os
@@ -47,11 +50,20 @@ class QuizService:
         """Load questions for all supported languages."""
         for lang, file_path in self._language_quiz_files.items():
             try:
+                # Log the full file path for debugging
+                logger.info(f"Attempting to load quiz file for {lang} from {file_path}")
+                
+                if not os.path.exists(file_path):
+                    logger.error(f"Quiz file not found: {file_path}")
+                    self._loaded_questions[lang] = []
+                    continue
+                
                 with open(file_path, "r", encoding="utf-8") as file:
                     data = yaml.safe_load(file)
                     
                 if not data or "questions" not in data:
                     logger.error(f"Invalid quiz file format: {file_path}")
+                    self._loaded_questions[lang] = []
                     continue
                     
                 self._loaded_questions[lang] = data["questions"]
@@ -62,13 +74,20 @@ class QuizService:
     
     def set_language(self, language: str) -> None:
         """Set the active language for the quiz service."""
+        # Check if language is already set to avoid unnecessary operations
+        if hasattr(self, 'language') and self.language == language:
+            return
+            
         if language in self._language_quiz_files:
             self.language = language
             self.questions = self._loaded_questions.get(language, [])
             self.questions_by_id = {q["id"]: q for q in self.questions}
             logger.info(f"Set active language to: {language}")
         else:
-            logger.error(f"Language not supported: {language}")
+            logger.error(f"Language not supported: {language}, defaulting to Ukrainian")
+            self.language = "uk"
+            self.questions = self._loaded_questions.get("uk", [])
+            self.questions_by_id = {q["id"]: q for q in self.questions}
     
     def get_all_questions(self) -> List[Dict[str, Any]]:
         """Get all questions."""
@@ -128,5 +147,7 @@ class QuizService:
     def format_question_text(self, question: Dict[str, Any]) -> str:
         """Format the question text for display."""
         if question["type"] == "text_input" and "placeholder" in question:
+            if self.language == "de":
+                return f"{question['text']}\n(Format: {question['placeholder']})"
             return f"{question['text']}\n(Формат: {question['placeholder']})"
         return question["text"] 

@@ -130,6 +130,7 @@ async def process_answer(message: Message, state: FSMContext, session_pool):
     
     # Initialize quiz service with language
     quiz_service = QuizService(language)
+    # Ensure the language is set
     quiz_service.set_language(language)
     
     # Get the current question

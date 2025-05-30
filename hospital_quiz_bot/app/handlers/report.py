@@ -203,6 +203,18 @@ async def start_new_quiz(callback: CallbackQuery, state: FSMContext, session_poo
     # Clear the state
     await state.clear()
     
+    # Get user's language preference before starting a new quiz
+    language = "uk"  # Default to Ukrainian
+    
+    async with session_pool() as session:
+        user_repo = UserRepository(session)
+        user = await user_repo.get_by_telegram_id(callback.from_user.id)
+        if user and user.language:
+            language = user.language
+            
+    # Store language in state to ensure it's available to cmd_quiz
+    await state.update_data(language=language)
+    
     # Use the cmd_quiz handler directly to start a new quiz
     await cmd_quiz(callback.message, state, session_pool)
     
